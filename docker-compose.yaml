@@ -1,0 +1,51 @@
+version: '3.8'
+
+networks:
+  tdd-network:
+
+volumes:
+  tdd-data:
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: tdd-nginx
+    ports:
+      - 8080:80
+    volumes:
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+      - ./src:/var/www/html
+    depends_on:
+      - app
+      - mysql
+    networks:
+      - tdd-network
+
+  mysql:
+    image: mysql:8.0.33
+    container_name: tdd-mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 3306:3306
+    volumes:
+      - tdd-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecret
+      MYSQL_DATABASE: tdd_db
+      MYSQL_USER: ttd_user
+      MYSQL_PASSWORD: secret
+    networks:
+      - tdd-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tdd-app
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - 9000:9000
+    networks:
+      - tdd-network
